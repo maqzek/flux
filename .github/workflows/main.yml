@@ -17,6 +17,12 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
 
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v5
+        with:
+          name: flux
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
       - name: Build flux-gl for Windows
         run: nix build .#flux-gl-windows --print-build-logs
       
@@ -27,4 +33,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: flux-gl-windows
-          path: result/bin/*.exe
+          path: result/**
