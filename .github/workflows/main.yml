@@ -1,7 +1,30 @@
-- uses: DeterminateSystems/nix-installer-action@main
-- uses: DeterminateSystems/magic-nix-cache-action@main
-- run: nix build .#flux-gl-windows
-- uses: actions/upload-artifact@v4
-  with:
-    name: flux-gl-windows
-    path: result/bin/*.exe
+name: Build flux-gl for Windows
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-windows:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Enable Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Build flux-gl for Windows
+        run: nix build .#flux-gl-windows --print-build-logs
+
+      - name: Upload Windows binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: flux-gl-windows
+          path: result/bin/*.exe
