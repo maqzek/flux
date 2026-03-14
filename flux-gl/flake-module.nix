@@ -4,6 +4,16 @@
       inherit (inputs) crane;
       inherit (pkgs) stdenv stdenvNoCC;
 
+      pkgsCross = import inputs.nixpkgs {
+      inherit system;
+      crossSystem.config = "x86_64-w64-mingw32";
+      overlays = [ (import inputs.rust-overlay) ];
+      };
+      rustToolchainWindows = pkgsCross.pkgsBuildHost.rust-bin.stable.latest.default.override {
+      targets = [ "x86_64-pc-windows-gnu" ];
+      };
+      craneLibWindows = (inputs.crane.mkLib pkgsCross).overrideToolchain rustToolchainWindows;
+
       src = ../.;
 
       rustExtensions = [
@@ -36,6 +46,19 @@
         inherit src;
         cargoExtraArgs = "-p flux-gl";
         doCheck = true;
+      };
+
+      flux-gl-windows = craneLibWindows.buildRustPackage {
+        inherit (config.packages.flux-gl)  # reuse same src/cargoToml/etc.
+          src cargoToml cargoLock;
+
+        CARGO_BUILD_TARGET = "x86_64-pc-windows-gnu";
+        depsBuildBuild = [ pkgsCross.pkgsBuildHost.stdenv.cc ];
+        CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS =
+          "-L native=${pkgsCross.windows.pthreads}/lib";
+
+        # disable tests — can't run Windows binaries on Linux
+        doCheck = false;
       };
 
       flux-gl-desktop-wrapped =
