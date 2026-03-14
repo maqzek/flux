@@ -9,7 +9,7 @@
         crossSystem.config = "x86_64-w64-mingw32";
         overlays = [ (import inputs.rust-overlay) ];
       };
-    
+
       craneLibWindows = (inputs.crane.mkLib pkgsCross).overrideToolchain (p:
         p.rust-bin.stable.latest.default.override {
           targets = [ "x86_64-pc-windows-gnu" ];
@@ -51,17 +51,18 @@
       };
 
       flux-gl-windows = craneLibWindows.buildPackage {
-        inherit (config.packages.flux-gl)
-          src cargoToml cargoLock;
-      
+        inherit (crateNameFromCargoToml ./flux) version;
+        pname = "flux-gl-windows";
+        inherit src;
+        cargoExtraArgs = "-p flux-gl";
+
         CARGO_BUILD_TARGET = "x86_64-pc-windows-gnu";
         depsBuildBuild = [ pkgsCross.pkgsBuildHost.stdenv.cc ];
         CARGO_TARGET_X86_64_PC_WINDOWS_GNU_RUSTFLAGS =
           "-L native=${pkgsCross.windows.pthreads}/lib";
-      
+
         doCheck = false;
       };
-
 
       flux-gl-desktop-wrapped =
         let
@@ -76,8 +77,6 @@
             libGL
           ];
         in
-          # Can’t use symlinkJoin because of the hooks are passed to the
-          # dependency-only build.
           stdenvNoCC.mkDerivation {
             name = "flux-gl-desktop-wrapped";
             inherit (config.packages.flux-gl-desktop) version;
